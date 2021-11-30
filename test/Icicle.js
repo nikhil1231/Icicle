@@ -1,15 +1,7 @@
-// test/Airdrop.js
-// Load dependencies
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
 const { BigNumber } = require('ethers');
 
-///////////////////////////////////////////////////////////
-// SEE https://hardhat.org/tutorial/testing-contracts.html
-// FOR HELP WRITING TESTS
-// USE https://github.com/gnosis/mock-contract FOR HELP
-// WITH MOCK CONTRACT
-///////////////////////////////////////////////////////////
 
 const KWEI = BigNumber.from(1000)
 const MWEI = KWEI.mul(KWEI)
@@ -23,7 +15,6 @@ describe('Icicle', function () {
     this.Icicle = await ethers.getContractFactory("Icicle");
     this.Wavax = await ethers.getContractFactory("WAVAX");
     this.signers = await ethers.getSigners();
-    this.OWNER = this.signers[0].address;
   });
 
 
@@ -32,9 +23,6 @@ describe('Icicle', function () {
     await this.wavax.deployed()
     this.ice = await this.Icicle.deploy(this.wavax.address)
     await this.ice.deployed()
-
-    this.MASTER_ROLE = await this.ice.MASTER_ROLE()
-    this.SLAVE_ROLE = await this.ice.SLAVE_ROLE()
 
     this.master = this.signers[0];
     this.slave = this.signers[1];
@@ -60,50 +48,47 @@ describe('Icicle', function () {
 
   describe("Constructor", async function () {
     it('should grant creator the Master role', async function () {
-      expect(await this.ice.hasRole(this.MASTER_ROLE, this.OWNER)).to.equal(true)
-    });
-
-    it('should make Master admin of Slave', async function () {
-      expect(await this.ice.getRoleAdmin(this.SLAVE_ROLE)).to.equal(this.MASTER_ROLE)
+      expect(await this.ice.MASTER()).to.equal(this.master.address)
     });
   });
 
   describe("addSlave", function () {
-    it('should add a slave', async function () {
+    it('should allow master', async function () {
+      expect(await this.ice.isSlave(this.addr)).to.equal(false)
       await this.ice.addSlave(this.addr)
-      expect(await this.ice.hasRole(this.SLAVE_ROLE, this.addr)).to.equal(true)
+      expect(await this.ice.isSlave(this.addr)).to.equal(true)
     });
 
     it('should not allow slave', async function () {
       await expect(
         this.ice.connect(this.slave).addSlave(this.addr)
-      ).to.be.revertedWith(`AccessControl: account ${this.slave.address.toLowerCase()} is missing role ${this.MASTER_ROLE}`)
+      ).to.be.revertedWith(`ERROR 403M`)
     });
 
     it('should not allow anyone', async function () {
       await expect(
         this.ice.connect(this.anyone).addSlave(this.addr)
-      ).to.be.revertedWith(`AccessControl: account ${this.anyone.address.toLowerCase()} is missing role ${this.MASTER_ROLE}`)
+      ).to.be.revertedWith(`ERROR 403M`)
     });
   });
 
   describe("removeSlave", function () {
     it('should remove a slave', async function () {
-      expect(await this.ice.hasRole(this.SLAVE_ROLE, this.slave.address)).to.equal(true)
+      expect(await this.ice.isSlave(this.slave.address)).to.equal(true)
       await this.ice.removeSlave(this.slave.address)
-      expect(await this.ice.hasRole(this.SLAVE_ROLE, this.slave.address)).to.equal(false)
+      expect(await this.ice.isSlave(this.slave.address)).to.equal(false)
     });
 
     it('should not allow slave', async function () {
       await expect(
         this.ice.connect(this.slave).removeSlave(this.addr)
-      ).to.be.revertedWith(`AccessControl: account ${this.slave.address.toLowerCase()} is missing role ${this.MASTER_ROLE}`)
+      ).to.be.revertedWith(`ERROR 403M`)
     });
 
     it('should not allow anyone', async function () {
       await expect(
         this.ice.connect(this.anyone).removeSlave(this.addr)
-      ).to.be.revertedWith(`AccessControl: account ${this.anyone.address.toLowerCase()} is missing role ${this.MASTER_ROLE}`)
+      ).to.be.revertedWith(`ERROR 403M`)
     });
   });
 
@@ -165,7 +150,7 @@ describe('Icicle', function () {
     it('should not allow anyone', async function () {
       await expect(
         this.ice.connect(this.anyone).withdraw(1)
-      ).to.be.revertedWith(`AccessControl: account ${this.anyone.address.toLowerCase()} is missing role ${this.SLAVE_ROLE}`)
+      ).to.be.revertedWith(`ERROR 403S`)
     });
   });
 
@@ -298,7 +283,7 @@ describe('Icicle', function () {
           [this.wavax.address, this.tokenA.address, this.tokenB.address, this.wavax.address],
           [this.pairAW.address, this.pairAB.address, this.pairBW.address]
         )
-      ).to.be.revertedWith(`AccessControl: account ${this.anyone.address.toLowerCase()} is missing role ${this.SLAVE_ROLE}`)
+      ).to.be.revertedWith(`ERROR 403S`)
     });
   });
 

@@ -2,23 +2,33 @@
 
 pragma solidity >=0.6.12;
 
-import "@openzeppelin/contracts/access/AccessControlEnumerable.sol";
 import "./interfaces/IPair.sol";
 import "./interfaces/IWAVAX.sol";
 import "./libraries/SafeMath.sol";
 import "./libraries/IceLibrary.sol";
 
-contract Icicle is AccessControlEnumerable {
+// 2,248,495 gas
+contract Icicle {
     using SafeMath for uint256;
 
-    bytes32 public constant MASTER_ROLE = keccak256("MASTER_ROLE");
-    bytes32 public constant SLAVE_ROLE = keccak256("SLAVE_ROLE");
     IWAVAX public immutable WAVAX;
+    address public immutable MASTER;
+
+    mapping(address => bool) slaves;
 
     constructor(address WAVAXAddr) {
         WAVAX = IWAVAX(WAVAXAddr);
-        _setupRole(MASTER_ROLE, msg.sender);
-        _setRoleAdmin(SLAVE_ROLE, MASTER_ROLE);
+        MASTER = msg.sender;
+    }
+
+    modifier onlyMaster() {
+        require(msg.sender == MASTER, "ERROR 403M");
+        _;
+    }
+
+    modifier onlySlave() {
+        require(slaves[msg.sender], "ERROR 403S");
+        _;
     }
 
     receive() external payable {
@@ -30,7 +40,7 @@ contract Icicle is AccessControlEnumerable {
         WAVAX.deposit{value: msg.value}();
     }
 
-    function withdraw(uint256 amount) external onlyRole(SLAVE_ROLE) {
+    function withdraw(uint256 amount) external onlySlave {
         // Unwrap and send
         require(
             amount <= WAVAX.balanceOf(address(this)),
@@ -40,12 +50,20 @@ contract Icicle is AccessControlEnumerable {
         payable(msg.sender).transfer(amount);
     }
 
-    function addSlave(address addr) external {
-        grantRole(SLAVE_ROLE, addr);
+    function addSlave(address addr) external onlyMaster {
+        if (!slaves[addr]) {
+            slaves[addr] = true;
+        }
     }
 
-    function removeSlave(address addr) external {
-        revokeRole(SLAVE_ROLE, addr);
+    function removeSlave(address addr) external onlyMaster {
+        if (slaves[addr]) {
+            slaves[addr] = false;
+        }
+    }
+
+    function isSlave(address addr) external view onlyMaster returns (bool) {
+      return slaves[addr];
     }
 
     function arb(
@@ -53,7 +71,7 @@ contract Icicle is AccessControlEnumerable {
         uint256 amountOutMin,
         address[] calldata tokens,
         address[] calldata lps
-    ) external onlyRole(SLAVE_ROLE) returns (uint256[] memory amounts) {
+    ) external onlySlave returns (uint256[] memory amounts) {
         require(tokens[0] == address(WAVAX), "ERROR 2"); // ICE: Must start with WAVAX
         require(
             tokens[tokens.length - 1] == address(WAVAX),
