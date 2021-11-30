@@ -137,7 +137,7 @@ describe('Icicle', function () {
       await expect(this.slave.sendTransaction({
         to: this.ice.address,
         value: depositAmount
-      })).to.be.revertedWith('Cannot send directly')
+      })).to.be.revertedWith('ERROR 1')
     });
   });
 
@@ -159,7 +159,7 @@ describe('Icicle', function () {
       const contractBalance = await this.wavax.balanceOf(this.ice.address)
       await expect(
         this.ice.connect(this.slave).withdraw(contractBalance.add(1))
-      ).to.be.revertedWith("Withdrawing too much")
+      ).to.be.revertedWith("ERROR 7")
     });
 
     it('should not allow anyone', async function () {
@@ -218,7 +218,7 @@ describe('Icicle', function () {
           [this.tokenA.address, this.tokenB.address, this.wavax.address],
           [this.pairAB.address, this.pairBW.address]
         )
-      ).to.be.revertedWith("ICE: Must start with WAVAX")
+      ).to.be.revertedWith("ERROR 2")
     });
 
     it("should fail if doesn't end with WAVAX", async function () {
@@ -229,7 +229,7 @@ describe('Icicle', function () {
           [this.wavax.address, this.tokenB.address, this.tokenA.address],
           [this.pairBW.address, this.pairAB.address]
         )
-      ).to.be.revertedWith("ICE: Must end with WAVAX")
+      ).to.be.revertedWith("ERROR 3")
     });
 
     it("should fail with bad param lengths", async function () {
@@ -240,7 +240,7 @@ describe('Icicle', function () {
           [this.wavax.address, this.tokenA.address, this.tokenB.address, this.wavax.address],
           [this.pairAW.address, this.pairAB.address]
         )
-      ).to.be.revertedWith("ICE: require(#lps = #tokens - 1)")
+      ).to.be.revertedWith("ERROR 4")
     });
 
     it("should fail if output < input", async function () {
@@ -255,7 +255,7 @@ describe('Icicle', function () {
           [this.wavax.address, this.tokenA.address, this.tokenB.address, this.wavax.address],
           [this.pairAW.address, this.pairAB.address, this.pairBW.address]
         )
-      ).to.be.revertedWith("ICE: INSUFFICIENT_OUTPUT_AMOUNT")
+      ).to.be.revertedWith("ERROR 5")
     });
 
     it("should succeed if input (+ gas) < output", async function () {

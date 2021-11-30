@@ -23,7 +23,7 @@ contract Icicle is AccessControlEnumerable {
 
     receive() external payable {
         // only accept AVAX from unwrapping via the WAVAX contract
-        require(msg.sender == address(WAVAX), "Cannot send directly");
+        require(msg.sender == address(WAVAX), "ERROR 1"); // Can't send directly
     }
 
     function deposit() external payable {
@@ -34,7 +34,7 @@ contract Icicle is AccessControlEnumerable {
         // Unwrap and send
         require(
             amount <= WAVAX.balanceOf(address(this)),
-            "Withdrawing too much"
+            "ERROR 7" // Withdrawing too much
         );
         WAVAX.withdraw(amount);
         payable(msg.sender).transfer(amount);
@@ -54,20 +54,20 @@ contract Icicle is AccessControlEnumerable {
         address[] calldata tokens,
         address[] calldata lps
     ) external onlyRole(SLAVE_ROLE) returns (uint256[] memory amounts) {
-        require(tokens[0] == address(WAVAX), "ICE: Must start with WAVAX");
+        require(tokens[0] == address(WAVAX), "ERROR 2"); // ICE: Must start with WAVAX
         require(
             tokens[tokens.length - 1] == address(WAVAX),
-            "ICE: Must end with WAVAX"
+            "ERROR 3" // ICE: Must end with WAVAX
         );
         require(
             lps.length == tokens.length - 1,
-            "ICE: require(#lps = #tokens - 1)"
+            "ERROR 4" // ICE: require(#lps = #tokens - 1)
         );
 
         amounts = IceLibrary.getAmountsOut(amountIn, tokens, lps);
         require(
             amounts[amounts.length - 1] >= amountOutMin,
-            "ICE: INSUFFICIENT_OUTPUT_AMOUNT"
+            "ERROR 5" // ICE: INSUFFICIENT_OUTPUT_AMOUNT
         );
 
         uint256 _balance = WAVAX.balanceOf(address(this));
@@ -78,7 +78,7 @@ contract Icicle is AccessControlEnumerable {
         // Sanity check, including poisonous tokens
         require(
             WAVAX.balanceOf(address(this)) >= _balance.add(amountOutMin),
-            "Final check fail"
+            "ERROR 6" // FINAL CHECK
         );
     }
 
