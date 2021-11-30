@@ -1,4 +1,11 @@
 import "@nomiclabs/hardhat-waffle"
+import * as dotenv from "dotenv";
+import './scripts/add_slave';
+import './scripts/create_wallet';
+import './scripts/withdraw';
+import './scripts/deposit';
+
+dotenv.config();
 
 // When using the hardhat network, you may choose to fork Fuji or Avalanche Mainnet
 // This will allow you to debug contracts using the hardhat network while keeping the current network state
@@ -59,15 +66,13 @@ export default {
     },
     fuji: {
       url: 'https://api.avax-test.network/ext/bc/C/rpc',
-      gasPrice: 225000000000,
       chainId: 43113,
-      accounts: []
+      accounts: process.env.PK ? [process.env.PK] : []
     },
     mainnet: {
       url: 'https://api.avax.network/ext/bc/C/rpc',
-      gasPrice: 225000000000,
       chainId: 43114,
-      accounts: []
+      accounts: process.env.PK ? [process.env.PK] : []
     }
   }
 }
